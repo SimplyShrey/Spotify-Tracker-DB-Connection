@@ -127,28 +127,6 @@ export const logoutUser = (req, res) => {
     }
 };
 
-// This function updates the cart of the user and adds or removes an element
-export const updateUserCart = async (req, res) => {
-    try {
-        const accessToken = req.headers.authorization.split(' ')[1];
-        const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-        const { productID, state } = req.body;
-
-        if (!mongoose.Types.ObjectId.isValid(decoded.ID)) {
-            return res.status(404).json({ success: false, message: "Invalid User Id" });
-        }
-
-        const user = await User.findById(decoded.ID);
-        const update = state ? { $addToSet: { cart: productID } } : { $pull: { cart: productID } };
-
-        const result = await User.findByIdAndUpdate(decoded.ID, update, { new: true });
-
-        return res.status(200).json({ success: true, message: "Cart Updated Successfully" });
-    } catch (error) {
-        console.error("Update cart:", error.message);
-        res.status(500).json({ success: false, message: "Server Error" });
-    }
-};
 
 // This function returns user details
 export const whoAmI = async (req, res) => {
@@ -213,76 +191,3 @@ export const updateUser = async (req, res) => {
     }
 };
 
-// This function fetches the users cart
-export const fetchUserCart = async (req, res) => {
-    try {
-        const accessToken = req.headers.authorization.split(' ')[1];
-        const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-
-        if (!mongoose.Types.ObjectId.isValid(decoded.ID)) {
-            return res.status(404).json({ success: false, message: "Invalid User Id" });
-        }
-
-        const user = await User.findById(decoded.ID);
-        return res.status(200).json({ success: true, data: user.cart, userID: user._id });
-    } catch (error) {
-        console.error("Error in Fetch Cart:", error.message);
-        res.status(500).json({ success: false, message: "Server Error" });
-    }
-};
-
-// This function clears the users cart
-export const clearUserCart = async (req, res) => {
-    try {
-        const accessToken = req.headers.authorization.split(' ')[1];
-        const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-
-        if (!mongoose.Types.ObjectId.isValid(decoded.ID)) {
-            return res.status(404).json({ success: false, message: "Invalid User Id" });
-        }
-
-        const user = await User.findById(decoded.ID);
-        user.cart = [];
-        await user.save();
-
-        return res.status(200).json({ success: true, message: "Cart Cleared Successfully" });
-    } catch (error) {
-        console.error("Error in Clear Cart:", error.message);
-        res.status(500).json({ success: false, message: "Server Error" });
-    }
-};
-
-// This function adds a review to a seller
-export const addReview = async (req, res) => {
-    try {
-        const accessToken = req.headers.authorization.split(' ')[1];
-        const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-
-        if (!mongoose.Types.ObjectId.isValid(decoded.ID)) {
-            return res.status(404).json({ success: false, message: "Invalid User Id" });
-        }
-
-        const { sellerID, rating, reviewText } = req.body;
-
-        const user = await User.findById(decoded.ID);
-        const seller = await User.findById(sellerID);
-
-        if (!seller) {
-            return res.status(404).json({ success: false, message: "Seller not found" });
-        }
-
-        const review = {
-            userID: decoded.ID,
-            rating,
-            reviewText,
-        };
-
-        seller.reviews.push(review);
-        await seller.save();
-
-        return res.status(200).json({ success: true, message: "Review added successfully" });
-    } catch (error) {
-        console.error("Error in Add Review:", error.message);
-        res.status(500).json({ success: false, message: "Server Error" });
-    }
-};
